@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eidolon-vision"
+version = "0.1.0"
+description = "Eidolon Vision Worker — host visual cortex; distills gated image bursts into sense.* facts"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "eidolon" }]
+keywords = ["vision", "companion", "mediapipe", "fatigue", "sense"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: FastAPI",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+]
+
+# Runtime dependencies. Group ordering follows architecture layers
+# (transport -> auth -> contracts -> vision -> vlm -> observability).
+dependencies = [
+    # Transport
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.27.0",
+    "httpx>=0.27.0",
+    # Auth: verify Hub-signed scoped upload tokens (same primitive as voice tokens)
+    "PyJWT[crypto]>=2.8.0",
+    # Contracts: sense.* facts live in the SDK (single source of truth)
+    "eidolon-sdk",
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
+    "PyYAML>=6.0.1",
+    # Vision (CPU-only; workload is gated bursts, not a video stream).
+    # NB: no ultralytics/YOLO in v1 — MediaPipe covers face (fatigue) and,
+    # when ④ scene ships, object detection too. See docs §11.4.
+    "mediapipe>=0.10.14",
+    "opencv-python-headless>=4.9.0",
+    "numpy>=1.26.0",
+    # VLM (⑥ look): reuse the house multi-provider layer
+    "litellm>=1.40.0",
+    # Observability
+    "loguru>=0.7.2",
+    "prometheus-client>=0.20.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.24", "ruff>=0.6"]
+
+[tool.uv.sources]
+eidolon-sdk = { path = "../eidolon_sdk", editable = true }
+
+[tool.setuptools.packages.find]
+include = ["eidolon_vision*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100

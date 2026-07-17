@@ -1,0 +1,12 @@
+# eidolon_vision default settings. Override via EIDOLON_VISION_* env vars.
+# Secrets (hub_public_key) are injected at deploy — never commit them here.
+
+host: 127.0.0.1
+port: 8085
+
+hub_base_url: http://127.0.0.1:8080
+hub_public_key: ""        # PEM, injected at deploy
+
+face_model_path: models/face_landmarker.task   # download at provision time; git-ignored
+
+vlm_model: gpt-4o-mini    # ⑥ look — concrete model is a product/cost choice

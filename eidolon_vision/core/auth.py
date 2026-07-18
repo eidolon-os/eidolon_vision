@@ -25,10 +25,8 @@ class TokenError(Exception):
 
 @dataclass(frozen=True, slots=True)
 class UploadGrant:
-    guard_companion_id: str
-    device_id: str
     owner_id: str
-    guard_epoch: int
+    device_id: str
     authorized_triggers: frozenset[str]
 
 
@@ -40,7 +38,7 @@ def verify_upload_token(token: str, *, hub_public_key: str) -> UploadGrant:
             hub_public_key,
             algorithms=_ALGORITHMS,
             audience=_AUDIENCE,
-            options={"require": ["exp", "aud", "sub"]},
+            options={"require": ["exp", "aud", "sub", "owner"]},
         )
     except jwt.PyJWTError as exc:  # expired, bad signature, missing claim, wrong aud
         raise TokenError(str(exc)) from exc
@@ -51,10 +49,8 @@ def verify_upload_token(token: str, *, hub_public_key: str) -> UploadGrant:
 
     try:
         return UploadGrant(
-            guard_companion_id=str(claims["companion"]),
-            device_id=str(claims["sub"]),
             owner_id=str(claims["owner"]),
-            guard_epoch=int(claims["epoch"]),
+            device_id=str(claims["sub"]),
             authorized_triggers=frozenset(triggers),
         )
     except (KeyError, ValueError, TypeError) as exc:
@@ -68,12 +64,12 @@ def authorize_trigger(grant: UploadGrant, trigger: str) -> None:
 
 
 def context_from_grant(
-    grant: UploadGrant, *, trigger: str, correlation_id: str, ts_ms: int
+    grant: UploadGrant, *, trigger: str, correlation_id: str, epoch: int, ts_ms: int
 ) -> BurstContext:
     return BurstContext(
-        guard_companion_id=grant.guard_companion_id,
+        owner_id=grant.owner_id,
         device_id=grant.device_id,
-        guard_epoch=grant.guard_epoch,
+        epoch=epoch,
         trigger=trigger,
         correlation_id=correlation_id,
         ts_ms=ts_ms,

@@ -69,6 +69,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def burst(
         trigger: str = Form(...),
         correlation_id: str = Form(...),
+        epoch: int = Form(...),
         ts_ms: int = Form(...),
         frames: list[UploadFile] = File(...),
         authorization: str | None = Header(default=None),
@@ -79,7 +80,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except auth.TokenError as exc:
             raise HTTPException(status_code=403, detail=str(exc)) from exc
 
-        ctx = auth.context_from_grant(grant, trigger=trigger, correlation_id=correlation_id, ts_ms=ts_ms)
+        ctx = auth.context_from_grant(
+            grant, trigger=trigger, correlation_id=correlation_id, epoch=epoch, ts_ms=ts_ms
+        )
         decoded = []
         for f in frames:
             try:

@@ -25,9 +25,7 @@ def _token(key, *, triggers=("fatigue_sample",), exp_delta=300, aud="eidolon_vis
     return jwt.encode(
         {
             "sub": "atk-1",
-            "companion": "guard-owner-1",
             "owner": "manson",
-            "epoch": 3,
             "triggers": list(triggers),
             "aud": aud,
             "iat": now,
@@ -42,7 +40,7 @@ def test_valid_token_yields_grant() -> None:
     key, pub = _keypair()
     grant = auth.verify_upload_token(_token(key), hub_public_key=pub)
     assert grant.device_id == "atk-1"
-    assert grant.guard_companion_id == "guard-owner-1"
+    assert grant.owner_id == "manson"
     assert "fatigue_sample" in grant.authorized_triggers
     auth.authorize_trigger(grant, "fatigue_sample")  # no raise
 

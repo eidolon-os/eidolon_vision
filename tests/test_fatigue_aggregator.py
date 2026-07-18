@@ -8,9 +8,9 @@ from eidolon_vision.core.types import BurstContext, Observation
 
 def _ctx() -> BurstContext:
     return BurstContext(
-        guard_companion_id="guard-owner-1",
+        owner_id="owner-1",
         device_id="atk-1",
-        guard_epoch=3,
+        epoch=3,
         trigger="fatigue_sample",
         correlation_id="sn-boot1-r5-e3",
         ts_ms=1_700_000_000_000,
@@ -46,7 +46,7 @@ def test_fires_on_reaching_min_yawns() -> None:
     assert fact.hint == "yawn"
     assert fact.signals["yawn_count"] == 3
     assert fact.model_id == "mediapipe-face-landmarker"
-    assert fact.guard_companion_id == "guard-owner-1"
+    assert fact.owner_id == "owner-1"
 
 
 def test_cooldown_suppresses_second_fact() -> None:

@@ -32,11 +32,11 @@ class Frame:
 
 @dataclass(frozen=True, slots=True)
 class BurstContext:
-    """Binding-scoped context resolved from the verified upload token."""
+    """Owner-scoped context resolved from the verified upload token + burst request."""
 
-    guard_companion_id: str
+    owner_id: str
     device_id: str
-    guard_epoch: int
+    epoch: int
     trigger: Trigger
     correlation_id: str
     ts_ms: int

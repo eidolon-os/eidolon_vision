@@ -69,10 +69,10 @@ class FatigueAggregator:
         yawns = len(self._yawn_ts)
         self._yawn_ts.clear()
         return SenseFatigue(
-            guard_companion_id=ctx.guard_companion_id,
+            owner_id=ctx.owner_id,
             device_id=ctx.device_id,
             correlation_id=ctx.correlation_id,
-            guard_epoch=ctx.guard_epoch,
+            epoch=ctx.epoch,
             ts_ms=ctx.ts_ms,
             hint="yawn",
             confidence=None,

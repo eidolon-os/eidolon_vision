@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Eidolon Vision Worker — host visual cortex; distills gated image bursts into sense.* facts"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { text = "PolyForm-Noncommercial-1.0.0" }
 authors = [{ name = "eidolon" }]
 keywords = ["vision", "companion", "mediapipe", "fatigue", "sense"]
 classifiers = [

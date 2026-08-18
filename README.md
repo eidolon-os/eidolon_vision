@@ -58,3 +58,15 @@ and are git-ignored — never commit them.
 
 Only thresholds are open (M3): mouth/eye aspect-ratio cutoffs, window, cooldown
 in `aggregate/fatigue.py::FatigueConfig`. The tech stack is fixed.
+
+## License
+
+Copyright © 2026 Li Jinsong.
+
+This project is available under the
+[PolyForm Noncommercial License 1.0.0](LICENSE) for permitted noncommercial
+use. Commercial use requires a separate written license; contact
+[lijinsong@aimanthor.com](mailto:lijinsong@aimanthor.com).
+
+See [LICENSING.md](LICENSING.md) and [NOTICE](NOTICE) for scope, exceptions,
+and required notices.

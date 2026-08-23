@@ -28,6 +28,18 @@ PERCEPTOR_ROLES: frozenset[str] = frozenset(
 )
 
 
+# ---------------------------------------------------------------------------
+# Look intents — what the caller wants done with a frame.
+#
+# Declared by the caller, never inferred here. "read" and "describe" are not two
+# quality tiers of one operation: extracting text is deterministic and does not
+# involve understanding the question, while describing a scene is the opposite.
+# An engine that conflates them answers the wrong question confidently.
+# ---------------------------------------------------------------------------
+LookIntent = str
+LOOK_INTENTS: frozenset[str] = frozenset({"read", "describe"})
+
+
 @dataclass(frozen=True, slots=True)
 class Frame:
     """One decoded frame. Owned by the graph; dropped when the call returns.

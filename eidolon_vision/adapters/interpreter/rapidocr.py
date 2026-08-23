@@ -24,6 +24,10 @@ ENGINE = "rapidocr-ppocr"
 class RapidOcrInterpreter:
     name = ENGINE
     egress = False
+    # `read` only. This engine transcribes and does not read the question at all,
+    # so claiming `describe` would mean answering "how many toys are there" with
+    # a transcription of whatever text happened to be in frame.
+    serves = frozenset({"read"})
 
     def __init__(self, *, min_score: float = 0.5, max_chars: int = 2000) -> None:
         from rapidocr_onnxruntime import RapidOCR  # lazy: heavy, optional extra
@@ -35,9 +39,9 @@ class RapidOcrInterpreter:
     async def ask(self, frames: Sequence[Frame], question: str) -> Answer:
         """Read text off the sharpest available frame.
 
-        The question is not interpreted — this engine only reports what is
-        written. Deciding whether that answers the question is the caller's job,
-        and when it does not, :class:`CannotAnswer` hands off to the next tier.
+        The question is deliberately unused: this engine reports what is written,
+        nothing more. That is exactly why it declares ``serves = {"read"}`` — an
+        engine that ignores the question must not be offered questions.
         """
         if not frames:
             raise CannotAnswer("no frames")

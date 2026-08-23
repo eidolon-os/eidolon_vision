@@ -25,6 +25,7 @@ _ALLOWED_FIELDS = frozenset(
         "question",
         "answer",
         "engine",
+        "intent",
         "egress",
         "latency_ms",
         "outcome",

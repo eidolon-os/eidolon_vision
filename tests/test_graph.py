@@ -11,6 +11,7 @@ import pytest
 from eidolon_vision.runtime.graph import (
     CapabilityUnavailable,
     EgressNotAuthorized,
+    IntentUnsupported,
     PerceptionGraph,
 )
 from eidolon_vision.runtime.ports import CannotAnswer
@@ -59,8 +60,11 @@ class RecordingAudit:
 
 
 class LocalEngine:
+    """Stands in for a text extractor: serves `read` only, ignores the question."""
+
     name = "local"
     egress = False
+    serves = frozenset({"read"})
 
     def __init__(self, *, answers: bool = True) -> None:
         self._answers = answers
@@ -72,8 +76,11 @@ class LocalEngine:
 
 
 class CloudEngine:
+    """Stands in for a VLM: reads the question, so it serves both intents."""
+
     name = "cloud"
     egress = True
+    serves = frozenset({"read", "describe"})
 
     async def ask(self, frames, question):
         return Answer(text="cloud answer", engine=self.name, egress=True, latency_ms=2)
@@ -225,3 +232,58 @@ async def test_fact_capability_cannot_be_asked():
     graph = _graph(specs=[FACT_SPEC], interpreters=[LocalEngine()])
     with pytest.raises(CapabilityUnavailable, match="not an answering capability"):
         await graph.ask(_frames(1), "?", _ctx("probe_push"))
+
+
+# -- intent routing ----------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_read_intent_reaches_the_local_text_engine():
+    graph = _graph(specs=[ANSWER_SPEC], interpreters=[LocalEngine(), CloudEngine()])
+    answer = await graph.ask(
+        _frames(1), "这上面写的什么？", _ctx("probe_pull"), intent="read"
+    )
+    assert answer.engine == "local"
+
+
+@pytest.mark.asyncio
+async def test_describe_intent_never_reaches_a_text_only_engine():
+    """The bug a real photo exposed: asking "how many toys" and getting a
+    transcription. A text extractor must not be offered a describe question."""
+    audit = RecordingAudit()
+    graph = _graph(
+        specs=[ANSWER_SPEC], interpreters=[LocalEngine(), CloudEngine()], audit=audit
+    )
+    # Without egress authorization the only describe-capable engine is held back,
+    # so the outcome is a refusal — never a transcription dressed up as an answer.
+    with pytest.raises(EgressNotAuthorized):
+        await graph.ask(
+            _frames(1), "桌上有几个玩偶？", _ctx("probe_pull"), intent="describe"
+        )
+    assert audit.rows[-1]["outcome"] == "egress_not_authorized"
+
+
+@pytest.mark.asyncio
+async def test_describe_intent_reaches_the_vlm_when_authorized():
+    graph = _graph(specs=[ANSWER_SPEC], interpreters=[LocalEngine(), CloudEngine()])
+    answer = await graph.ask(
+        _frames(1), "桌上有几个玩偶？", _ctx("probe_pull"),
+        intent="describe", allow_egress=True,
+    )
+    assert (answer.engine, answer.egress) == ("cloud", True)
+
+
+@pytest.mark.asyncio
+async def test_no_engine_for_intent_is_reported_not_faked():
+    audit = RecordingAudit()
+    graph = _graph(specs=[ANSWER_SPEC], interpreters=[LocalEngine()], audit=audit)
+    with pytest.raises(IntentUnsupported):
+        await graph.ask(_frames(1), "这是什么？", _ctx("probe_pull"), intent="describe")
+    assert audit.rows[-1]["outcome"] == "intent_unsupported"
+
+
+@pytest.mark.asyncio
+async def test_unknown_intent_is_rejected():
+    graph = _graph(specs=[ANSWER_SPEC], interpreters=[LocalEngine()])
+    with pytest.raises(IntentUnsupported, match="unknown intent"):
+        await graph.ask(_frames(1), "?", _ctx("probe_pull"), intent="telepathy")

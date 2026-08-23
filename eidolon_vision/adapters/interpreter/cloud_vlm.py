@@ -21,6 +21,10 @@ from ...runtime.types import Answer, Frame
 
 class CloudVlmInterpreter:
     egress = True
+    # A VLM actually reads the question, so it can serve both intents. It is
+    # still last in the chain: for `read`, the local engine is both cheaper and
+    # more accurate.
+    serves = frozenset({"read", "describe"})
 
     def __init__(self, *, model: str, temperature: float = 0.2) -> None:
         self._model = model

@@ -83,10 +83,21 @@ class Interpreter(Protocol):
 
     Deliberately returns an :class:`Answer`, not a fact — an interpreter result
     answers a person and is then gone. It never enters the control plane.
+
+    ``serves`` declares which intents this engine can actually satisfy, and the
+    graph consults it before spending anything. Without it a text extractor
+    happily "answers" *how many toys are on the desk* with a transcription — a
+    confidently wrong answer, which is worse than no answer.
+
+    The intent is *declared by the caller*, never guessed here. The companion's
+    LLM already knows whether the owner said "read this to me" or "what is this";
+    re-deriving that from the question string in the vision worker would be
+    guessing at something upstream already knows.
     """
 
     name: str
     egress: bool  # does producing this answer send pixels off the owner's machine
+    serves: frozenset[str]  # subset of LOOK_INTENTS
 
     async def ask(self, frames: Sequence[Frame], question: str) -> Answer: ...
 

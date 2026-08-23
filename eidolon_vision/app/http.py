@@ -19,7 +19,7 @@ from loguru import logger
 
 from ..adapters.codec import decode_jpeg
 from ..runtime import auth
-from ..runtime.graph import CapabilityUnavailable, EgressNotAuthorized
+from ..runtime.graph import CapabilityUnavailable, EgressNotAuthorized, IntentUnsupported
 from ..runtime.types import RequestContext
 from .bootstrap import build_graph
 from .config import Settings, load_settings
@@ -106,6 +106,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         question: str = Form(...),
         image: UploadFile = File(...),
         correlation_id: str = Form(default="look"),
+        # Declared by the caller: the companion already knows whether the owner
+        # said "read this" or "what is this". See runtime.types.LOOK_INTENTS.
+        intent: str = Form(default="read"),
         allow_egress: bool = Form(default=False),
         authorization: str | None = Header(default=None),
     ) -> dict:
@@ -124,7 +127,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             ts_ms=_now_ms(),
         )
         try:
-            answer = await graph.ask([frame], question, ctx, allow_egress=allow_egress)
+            answer = await graph.ask(
+                [frame], question, ctx, intent=intent, allow_egress=allow_egress
+            )
+        except IntentUnsupported as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         except EgressNotAuthorized as exc:
             # 428: the request is well-formed but a precondition — the owner's
             # consent to send this frame off the machine — has not been met.
@@ -134,6 +141,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         return {
             "answer": answer.text,
+            "intent": intent,
             "engine": answer.engine,
             "egress": answer.egress,
             "latency_ms": answer.latency_ms,

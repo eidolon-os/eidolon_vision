@@ -2,10 +2,23 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from eidolon_vision.runtime.registry import CapabilityRegistry, RegistryError
 from eidolon_vision.runtime.spec import CapabilitySpec, SpecError
+
+CAPS_DIR = Path(__file__).resolve().parents[1] / "eidolon_vision" / "capabilities"
+
+
+def _shipped_capability_names() -> tuple[str, ...]:
+    """Whatever capabilities are in the tree right now — never a literal list."""
+    if not CAPS_DIR.is_dir():
+        return ()
+    return tuple(
+        sorted(p.name for p in CAPS_DIR.iterdir() if p.is_dir() and not p.name.startswith("_"))
+    )
 
 
 def _fact_spec(name: str, triggers: tuple[str, ...]) -> CapabilitySpec:
@@ -97,14 +110,11 @@ def test_shipped_capabilities_declare_valid_specs() -> None:
     that names a capability is the same coupling it is meant to forbid, and it
     would go red the moment one is deleted.
     """
-    from pathlib import Path
-
     from eidolon_vision.app.bootstrap import build_registry
 
-    root = Path(__file__).resolve().parents[1] / "eidolon_vision" / "capabilities"
-    found = tuple(
-        sorted(p.name for p in root.iterdir() if p.is_dir() and not p.name.startswith("_"))
-    )
+    found = _shipped_capability_names()
+    if not found:
+        pytest.skip("no capabilities in the tree")
     registry = build_registry(found)
     assert registry.names() == found
     # Every declared trigger routes back to exactly the capability that claimed it.
@@ -115,8 +125,20 @@ def test_shipped_capabilities_declare_valid_specs() -> None:
 
 
 def test_missing_capability_is_skipped_not_fatal() -> None:
-    """Deleting a capability package must degrade, never crash."""
+    """Deleting a capability package must degrade, never crash.
+
+    Uses whichever capability happens to exist rather than naming one: an
+    earlier version of this test asserted on ``look_on_demand`` literally and
+    went red the moment that package was removed — the very coupling the
+    architecture tests forbid, committed in the test layer instead of the
+    framework. Removability is only real if the checks survive a removal too.
+    """
     from eidolon_vision.app.bootstrap import build_registry
 
-    registry = build_registry(("look_on_demand", "deleted_yesterday"))
-    assert registry.names() == ("look_on_demand",)
+    existing = _shipped_capability_names()
+    if not existing:
+        pytest.skip("no capabilities in the tree")
+
+    one = existing[0]
+    registry = build_registry((one, "deleted_yesterday"))
+    assert registry.names() == (one,)

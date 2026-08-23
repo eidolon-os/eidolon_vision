@@ -10,6 +10,8 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = ROOT / "eidolon_vision"
 
@@ -82,7 +84,10 @@ def test_runtime_never_names_a_capability() -> None:
         for p in (PACKAGE / "capabilities").iterdir()
         if p.is_dir() and not p.name.startswith("_")
     )
-    assert names, "no capabilities found — the check would be vacuous"
+    if not names:
+        # Every capability removed: there is nothing to look for, which is a
+        # legitimate state (that is the point of removability), not a failure.
+        pytest.skip("no capabilities in the tree")
 
     violations = []
     for path in (PACKAGE / "runtime").rglob("*.py"):

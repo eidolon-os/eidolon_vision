@@ -29,9 +29,27 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 AUDIENCE = "eidolon_vision"
 
 
-def issue_token(*, device_id: str, owner_id: str, triggers: list[str], ttl_s: int = 600):
-    """Stand in for the Hub. Returns (token, public_key_pem)."""
-    key = ed25519.Ed25519PrivateKey.generate()
+def _keypair(key_file: Path) -> tuple[str, str]:
+    """Load, or create and persist, the demo signing key.
+
+    Persisted because the server needs the public half at startup and the client
+    needs the private half per request — a fresh key each run would fail to
+    verify, which is the correct behaviour and a useless demo.
+    """
+    if key_file.is_file():
+        key = serialization.load_pem_private_key(key_file.read_bytes(), password=None)
+    else:
+        key = ed25519.Ed25519PrivateKey.generate()
+        key_file.parent.mkdir(parents=True, exist_ok=True)
+        key_file.write_bytes(
+            key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption(),
+            )
+        )
+        key_file.chmod(0o600)
+
     private_pem = key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
@@ -45,6 +63,14 @@ def issue_token(*, device_id: str, owner_id: str, triggers: list[str], ttl_s: in
         )
         .decode()
     )
+    return private_pem, public_pem
+
+
+def issue_token(
+    *, key_file: Path, device_id: str, owner_id: str, triggers: list[str], ttl_s: int = 600
+):
+    """Stand in for the Hub. Returns (token, public_key_pem)."""
+    private_pem, public_pem = _keypair(key_file)
     token = jwt.encode(
         {
             "sub": device_id,
@@ -67,10 +93,14 @@ def main() -> int:
     ap.add_argument("--repeat", type=int, default=5)
     ap.add_argument("--allow-egress", action="store_true")
     ap.add_argument("--print-key", action="store_true", help="emit the PEM the server needs")
+    ap.add_argument("--key-file", type=Path, default=Path("var/demo_signing_key.pem"))
     args = ap.parse_args()
 
     token, public_pem = issue_token(
-        device_id="demo-device", owner_id="demo-owner", triggers=["user_look"]
+        key_file=args.key_file,
+        device_id="demo-device",
+        owner_id="demo-owner",
+        triggers=["user_look", "presence_sample", "fatigue_sample"],
     )
     if args.print_key:
         print(public_pem)

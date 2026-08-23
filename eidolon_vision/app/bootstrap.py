@@ -61,7 +61,13 @@ def build_perceptors(settings: Settings, needed_roles: frozenset[str]) -> dict[s
             logger.warning("role {!r} unavailable: {}", role, exc)
 
     def _presence():
+        # THE swap. Three implementations of one role; capability code never
+        # learns which one it got.
         if settings.presence_source == "host":
+            from ..adapters.perceptor.frame_diff_presence import FrameDiffPresencePerceptor
+
+            return FrameDiffPresencePerceptor()
+        if settings.presence_source == "host_face":
             from ..adapters.perceptor.mediapipe_face import MediaPipeFacePresencePerceptor
 
             return MediaPipeFacePresencePerceptor(model_asset_path=settings.face_model_path)

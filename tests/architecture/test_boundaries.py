@@ -93,6 +93,24 @@ def test_runtime_never_names_a_capability() -> None:
     assert not violations, "runtime knows a capability by name:\n" + "\n".join(violations)
 
 
+def test_capability_names_do_not_collide_with_role_names() -> None:
+    """Roles and capabilities are different namespaces and must stay distinguishable.
+
+    A capability called the same thing as a role makes the check above
+    unusable — the role name legitimately appears all over runtime/ — and makes
+    `needs_roles=("x",)` ambiguous to a reader. Cheaper to forbid the collision.
+    """
+    from eidolon_vision.runtime.types import PERCEPTOR_ROLES
+
+    names = {
+        p.name
+        for p in (PACKAGE / "capabilities").iterdir()
+        if p.is_dir() and not p.name.startswith("_")
+    }
+    collisions = names & set(PERCEPTOR_ROLES)
+    assert not collisions, f"capability name collides with a role: {sorted(collisions)}"
+
+
 def test_every_capability_declares_a_spec() -> None:
     from eidolon_vision.runtime.spec import CapabilitySpec
 

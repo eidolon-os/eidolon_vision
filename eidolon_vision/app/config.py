@@ -33,7 +33,10 @@ class Settings(BaseSettings):
 
     # Which side computes the `presence` judgement. The device is cheaper and
     # more private (a rejected frame was never sent); the host is stronger.
-    presence_source: Literal["device", "host"] = "device"
+    #   device     — the ESP32's own ESP-DL judgement, arrives with the burst
+    #   host       — frame differencing here (opencv only, no model asset)
+    #   host_face  — MediaPipe face detection here (needs the model asset)
+    presence_source: Literal["device", "host", "host_face"] = "device"
 
     # -- interpreters ------------------------------------------------------
     enable_local_ocr: bool = True   # T1, no egress — the default answer path

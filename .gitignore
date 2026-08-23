@@ -9,3 +9,6 @@ uv.lock
 models/*.task
 models/*.tflite
 .env
+
+# Demo runtime artifacts: audit log, signing key, server log.
+var/

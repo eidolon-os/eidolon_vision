@@ -27,6 +27,7 @@ dependencies = [
     # Transport
     "fastapi>=0.110.0",
     "uvicorn[standard]>=0.27.0",
+    "python-multipart>=0.0.9",   # /v1/burst and /v1/look are multipart uploads
     "httpx>=0.27.0",
     # Auth: verify Hub-signed scoped upload tokens (same primitive as voice tokens)
     "PyJWT[crypto]>=2.8.0",
@@ -35,20 +36,20 @@ dependencies = [
     "pydantic>=2.6.0",
     "pydantic-settings>=2.2.0",
     "PyYAML>=6.0.1",
-    # Vision (CPU-only; workload is gated bursts, not a video stream).
-    # NB: no ultralytics/YOLO in v1 — MediaPipe covers face (fatigue) and,
-    # when ④ scene ships, object detection too. See docs §11.4.
-    "mediapipe>=0.10.14",
+    # Frame decode — needed by every adapter that touches pixels.
     "opencv-python-headless>=4.9.0",
     "numpy>=1.26.0",
-    # VLM (⑥ look): reuse the house multi-provider layer
-    "litellm>=1.40.0",
     # Observability
     "loguru>=0.7.2",
     "prometheus-client>=0.20.0",
 ]
 
 [project.optional-dependencies]
+# Heavy model deps follow their adapter, not the service. Installing only the
+# adapters a host actually binds keeps a Pi from carrying an unused framework.
+perceptor-mediapipe = ["mediapipe>=0.10.14"]
+interpreter-ocr = ["rapidocr-onnxruntime>1.3.24", "onnxruntime>=1.17"]
+interpreter-cloud = ["litellm>=1.40.0"]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.24", "ruff>=0.6"]
 
 [tool.uv.sources]
@@ -58,7 +59,17 @@ eidolon-sdk = { path = "../eidolon_sdk", editable = true }
 include = ["eidolon_vision*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "eidolon_vision/capabilities"]
+asyncio_mode = "auto"
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint.per-file-ignores]
+# Demo driver is executed directly, not imported.
+"scripts/*.py" = ["EXE001"]
+# Form()/File() in parameter defaults is FastAPI's documented idiom.
+"eidolon_vision/app/http.py" = ["B008"]
+# Optional-adapter construction must degrade on *any* failure — a missing extra,
+# a missing model asset, or a runtime's own init error. Narrowing defeats that.
+"eidolon_vision/app/bootstrap.py" = ["BLE001"]

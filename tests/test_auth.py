@@ -6,7 +6,7 @@ import jwt
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from eidolon_vision.core import auth
+from eidolon_vision.runtime import auth
 
 
 def _keypair() -> tuple[object, str]:

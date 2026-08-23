@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 import jwt
 
-from .types import BurstContext
+from .types import RequestContext
 
 _ALGORITHMS = ["EdDSA", "ES256", "RS256"]
 _AUDIENCE = "eidolon_vision"
@@ -65,8 +65,8 @@ def authorize_trigger(grant: UploadGrant, trigger: str) -> None:
 
 def context_from_grant(
     grant: UploadGrant, *, trigger: str, correlation_id: str, epoch: int, ts_ms: int
-) -> BurstContext:
-    return BurstContext(
+) -> RequestContext:
+    return RequestContext(
         owner_id=grant.owner_id,
         device_id=grant.device_id,
         epoch=epoch,

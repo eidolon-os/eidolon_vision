@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from eidolon_sdk.biz.sense import SenseFatigue
 
-from eidolon_vision.aggregate.fatigue import FatigueAggregator, FatigueConfig
-from eidolon_vision.core.types import BurstContext, Observation
+from eidolon_vision.capabilities.fatigue.aggregate import FatigueConfig, FatigueWindow
+from eidolon_vision.runtime.types import Observation, RequestContext
 
 
-def _ctx() -> BurstContext:
-    return BurstContext(
+def _ctx() -> RequestContext:
+    return RequestContext(
         owner_id="owner-1",
         device_id="atk-1",
         epoch=3,
@@ -17,17 +17,17 @@ def _ctx() -> BurstContext:
     )
 
 
-def _agg() -> FatigueAggregator:
+def _agg() -> FatigueWindow:
     cfg = FatigueConfig(mar_yawn=0.6, window_ms=300_000, min_yawns=3, cooldown_ms=1_200_000)
-    return FatigueAggregator(model_id="mediapipe-face-landmarker", model_version="mar-ear-v1", config=cfg)
+    return FatigueWindow(model_id="mediapipe-face-landmarker", model_version="mar-ear-v1", config=cfg)
 
 
 def _yawn() -> Observation:
-    return Observation(kind="face", metrics={"mar": 0.8, "ear": 0.3})
+    return Observation(role="face_metrics", metrics={"mar": 0.8, "ear": 0.3})
 
 
 def _neutral() -> Observation:
-    return Observation(kind="face", metrics={"mar": 0.2, "ear": 0.3})
+    return Observation(role="face_metrics", metrics={"mar": 0.2, "ear": 0.3})
 
 
 def test_no_fact_below_threshold_count() -> None:

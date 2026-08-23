@@ -9,9 +9,8 @@ here. This module just serializes and delivers.
 from __future__ import annotations
 
 import httpx
-from loguru import logger
-
 from eidolon_sdk.biz.sense import SenseMessage
+from loguru import logger
 
 
 class HubIngress:

@@ -142,3 +142,37 @@ def test_missing_capability_is_skipped_not_fatal() -> None:
     one = existing[0]
     registry = build_registry((one, "deleted_yesterday"))
     assert registry.names() == (one,)
+
+
+def test_the_declared_port_is_the_one_served_and_is_not_a_product_port() -> None:
+    """The declaration binds; it used to only be repeated.
+
+    `Settings.port` was read by nothing. The server was started through the
+    uvicorn CLI, so the address came from whatever `--port` the caller typed —
+    and with no flag, from uvicorn's own 8000. That is how a README line put
+    this tool on 8085, which the workspace registry assigns to Data's workspace
+    API, and left a product service failing to bind on every restart.
+    """
+
+    from eidolon_vision.app.config import Settings
+
+    settings = Settings()
+    assert settings.port == 18085
+    assert settings.port != 8085, "8085 is Data's workspace API in the port registry"
+
+    served: dict[str, object] = {}
+
+    def fake_run(app, *, host: str, port: int) -> None:
+        served["host"] = host
+        served["port"] = port
+
+    from eidolon_vision.app import __main__ as entrypoint
+
+    original = entrypoint.uvicorn.run
+    entrypoint.uvicorn.run = fake_run  # type: ignore[assignment]
+    try:
+        entrypoint.main()
+    finally:
+        entrypoint.uvicorn.run = original  # type: ignore[assignment]
+
+    assert served == {"host": settings.host, "port": settings.port}

@@ -1,14 +1,13 @@
-# eidolon_vision default settings. Override via EIDOLON_VISION_* env vars.
+# eidolon_vision default settings, as documentation. Nothing loads this file:
+# Settings reads the environment (EIDOLON_VISION_*) and its own defaults, so the
+# values here are a readable copy of those defaults and not the ones in effect.
+# Change eidolon_vision/app/config.py with them.
 # Secrets (hub_public_key) are injected at deploy — never commit them here.
 
 host: 127.0.0.1
-# 18085, not 8085. The workspace's port registry
-# (eidolon_ops/src/eidolon_ops/assets/ports.yaml) assigns 8085 to Data's
-# workspace API, which is a product service on every Host; this project is a
-# workstation-only tool that happens to live in the same checkout. Two things
-# claiming one port meant whichever started first won, and the loser spent the
-# run in a restart loop with the bind error buried in its own log. 18xxx is
-# where the registry keeps non-product projects.
+# Registered as vision.api in the workspace port registry. 8085 is Data's
+# workspace API on every Host; 18xxx is where that registry keeps projects that
+# are not product units.
 port: 18085
 
 hub_base_url: http://127.0.0.1:8080

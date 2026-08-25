@@ -1,4 +1,4 @@
-"""Service settings (env + config/default.yaml). No secrets in source.
+"""Service settings, from the environment. No secrets in source.
 
 Two kinds of knob live here and they are worth keeping apart mentally:
 * *wiring* — which capabilities are on, which implementation fills a role. These
@@ -18,8 +18,12 @@ class Settings(BaseSettings):
 
     # -- transport ---------------------------------------------------------
     host: str = "127.0.0.1"
-    #: See config/default.yaml: 8085 belongs to Data's workspace API in the
-    #: workspace port registry, and this is a workstation-only tool.
+    #: 8085 belongs to Data's workspace API in the workspace port registry
+    #: (eidolon_ops/src/eidolon_ops/assets/ports.yaml); this is a
+    #: workstation-only tool and holding a product service's port cost Data a
+    #: day and a half of failed binds. Served by ``python -m eidolon_vision.app``
+    #: so the declared port is the one bound, rather than a number the README
+    #: repeated and the process ignored.
     port: int = 18085
 
     # -- Hub ---------------------------------------------------------------

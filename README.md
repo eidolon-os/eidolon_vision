@@ -47,7 +47,8 @@ Hub issues scoped upload token ──► device POST burst (frames+token) ──
 ```
 uv sync                      # NB: pulls mediapipe/opencv (heavy, CPU)
 uv run pytest                # pure-logic tests (aggregator, auth) need no models
-uv run uvicorn eidolon_vision.app.http:create_app --factory --port 18085
+uv run python -m eidolon_vision.app        # serves 127.0.0.1:18085
+# or override: EIDOLON_VISION_PORT=... uv run python -m eidolon_vision.app
 ```
 
 `config/default.yaml` documents settings; override via `EIDOLON_VISION_*` env

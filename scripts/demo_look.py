@@ -89,7 +89,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--image", required=True, type=Path)
     ap.add_argument("--question", default="这上面写的什么？")
-    ap.add_argument("--base-url", default="http://127.0.0.1:8085")
+    ap.add_argument("--base-url", default="http://127.0.0.1:18085")
     ap.add_argument("--repeat", type=int, default=5)
     ap.add_argument("--allow-egress", action="store_true")
     ap.add_argument("--print-key", action="store_true", help="emit the PEM the server needs")

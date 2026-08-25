@@ -18,7 +18,9 @@ class Settings(BaseSettings):
 
     # -- transport ---------------------------------------------------------
     host: str = "127.0.0.1"
-    port: int = 8085
+    #: See config/default.yaml: 8085 belongs to Data's workspace API in the
+    #: workspace port registry, and this is a workstation-only tool.
+    port: int = 18085
 
     # -- Hub ---------------------------------------------------------------
     # Empty base_url means "no fact sink" — the demo configuration, where facts

@@ -26,7 +26,7 @@ from demo_look import issue_token
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=["device", "host"], required=True)
-    ap.add_argument("--base-url", default="http://127.0.0.1:8085")
+    ap.add_argument("--base-url", default="http://127.0.0.1:18085")
     ap.add_argument("--key-file", type=Path, default=Path("var/demo_signing_key.pem"))
     ap.add_argument("--samples", type=Path, default=Path("samples"))
     ap.add_argument("--rounds", type=int, default=3)

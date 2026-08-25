@@ -11,7 +11,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PORT="${PORT:-8085}"
+PORT="${PORT:-18085}"
 BASE="http://127.0.0.1:${PORT}"
 KEEP=0
 [[ "${1:-}" == "--keep" ]] && KEEP=1

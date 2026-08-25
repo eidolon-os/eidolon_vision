@@ -2,7 +2,14 @@
 # Secrets (hub_public_key) are injected at deploy — never commit them here.
 
 host: 127.0.0.1
-port: 8085
+# 18085, not 8085. The workspace's port registry
+# (eidolon_ops/src/eidolon_ops/assets/ports.yaml) assigns 8085 to Data's
+# workspace API, which is a product service on every Host; this project is a
+# workstation-only tool that happens to live in the same checkout. Two things
+# claiming one port meant whichever started first won, and the loser spent the
+# run in a restart loop with the bind error buried in its own log. 18xxx is
+# where the registry keeps non-product projects.
+port: 18085
 
 hub_base_url: http://127.0.0.1:8080
 hub_public_key: ""        # PEM, injected at deploy

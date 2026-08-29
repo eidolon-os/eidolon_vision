@@ -2,7 +2,6 @@ __pycache__/
 *.py[cod]
 .venv/
 *.egg-info/
-uv.lock
 .pytest_cache/
 .ruff_cache/
 *.task

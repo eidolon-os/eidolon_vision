@@ -7,7 +7,7 @@ name = "eidolon-vision"
 version = "0.1.0"
 description = "Eidolon Vision Worker — host visual cortex; distills gated image bursts into sense.* facts"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13,<3.14"
 license = { text = "PolyForm-Noncommercial-1.0.0" }
 authors = [{ name = "eidolon" }]
 keywords = ["vision", "companion", "mediapipe", "fatigue", "sense"]
@@ -15,9 +15,7 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Framework :: FastAPI",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Typing :: Typed",
 ]
 

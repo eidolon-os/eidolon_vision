@@ -23,7 +23,7 @@ from ..runtime.graph import CapabilityUnavailable, EgressNotAuthorized, IntentUn
 from ..runtime.types import RequestContext
 from .bootstrap import build_face_service, build_graph
 from .config import Settings, load_settings
-from .faces_http import register_face_routes
+from .faces_http import face_routes_usable, register_face_routes
 
 
 def _now_ms() -> int:
@@ -64,7 +64,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "triggers": graph.triggers(),
             "roles_bound": graph.bound_roles(),
             "interpreters": graph.interpreter_names(),
-            "face_identity": faces is not None and bool(settings.service_token),
+            "face_identity": face_routes_usable(settings, faces),
         }
 
     @app.post("/v1/burst", status_code=202)

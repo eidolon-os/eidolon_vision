@@ -87,11 +87,27 @@ decides who someone is and never stores a template.
   each enrolled person. No feature is returned. Called by Channel for
   `vision.who`.
 
-Both routes take the Host service token (`EIDOLON_VISION_SERVICE_TOKEN`), not a
-device upload token, and answer 503 until that token and
-`EIDOLON_VISION_FACE_IDENTITY_MODEL_DIR` are set. The model package (YuNet +
-SFace from the OpenCV zoo, with `manifest.json` and `face-policy.json`) is owned
-by `eidolon_models` under `face_recognition/sface_yunet_opencv_zoo/<revision>/`;
+Neither route takes a device upload token; their callers are the Host's own
+services. Who may call follows from the bind address:
+
+- bound to loopback (`EIDOLON_VISION_HOST` = `127.0.0.1`, `::1` or `localhost`)
+  with no `EIDOLON_VISION_SERVICE_TOKEN`: open to processes on the Host, like
+  the Host's other model services. Vision stores nothing; templates arrive with
+  each request, and Data, which keeps them, has its own token;
+- with `EIDOLON_VISION_SERVICE_TOKEN` set: the token is required, on any bind;
+- bound elsewhere with no token: 503, as when not configured.
+
+They answer 503 until `EIDOLON_VISION_FACE_IDENTITY_MODEL_DIR` names a loadable
+package. `GET /v1/faces/readyz` answers 200 exactly when the routes would, and
+`/healthz` reports the same as `face_identity`. The model package (YuNet + SFace
+from the OpenCV zoo, with `manifest.json` and `face-policy.json`) is owned by
+`eidolon_models` under `face_recognition/sface_yunet_opencv_zoo/<revision>/`;
 checksums are verified at start and nothing is downloaded. Code:
 `runtime/faces.py` (rules, no model needed), `adapters/faces/opencv_zoo.py`,
 `app/faces_http.py`. The audit row for a comparison holds counts only.
+
+On a Host this is the `eidolon-vision` unit (`ops/component.toml`,
+`deploy/systemd/eidolon-vision.service`, `scripts/eidolon-vision`), installed
+where the Host declares `local_face_identity`. The package reaches it as the
+`face-sface-yunet-48b10fa5` artifact of `eidolon_models`, under
+`/var/lib/eidolon/models/`.

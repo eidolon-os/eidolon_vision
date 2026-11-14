@@ -1,0 +1,45 @@
+[Unit]
+Description=Eidolon Vision face identity (compare a still with enrolled faces)
+After=local-fs.target network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=eidolon
+Group=eidolon
+UMask=0007
+# The Host path contract, the same one every product unit is sealed against. There is no env
+# file of the service's own: it holds no credential. Loopback with no service token is what
+# opens the face routes to the Host's own processes (app/faces_http.py), Admin and Channel.
+EnvironmentFile=/etc/eidolon/host.env
+Environment=EIDOLON_VISION_HOST=127.0.0.1
+Environment=EIDOLON_VISION_PORT=18085
+# Emptied on purpose: the default points the legacy fact sink at a Hub route that no longer exists.
+Environment=EIDOLON_VISION_HUB_BASE_URL=
+# The eidolon_models artifact for local_face_identity (its ops/component.toml), carried by digest.
+Environment=EIDOLON_VISION_FACE_IDENTITY_MODEL_DIR=/var/lib/eidolon/models/face-sface-yunet-48b10fa5
+# One line of counts per look; never a name, a score or a feature.
+Environment=EIDOLON_VISION_AUDIT_LOG_PATH=/var/lib/eidolon/vision/audit.jsonl
+ExecStart=/opt/eidolon/current/eidolon_vision/scripts/eidolon-vision
+Restart=on-failure
+RestartSec=2
+# Two ONNX graphs are checksummed and loaded before the port answers.
+TimeoutStartSec=120
+KillSignal=SIGTERM
+TimeoutStopSec=20s
+StateDirectory=eidolon/vision
+StateDirectoryMode=0750
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

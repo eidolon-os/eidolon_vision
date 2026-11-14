@@ -1,0 +1,16 @@
+#!/bin/sh
+# The Vision service on a Host: `python -m eidolon_vision.app`, which binds the address its own
+# settings declare (EIDOLON_VISION_HOST / EIDOLON_VISION_PORT). Every setting comes from the
+# environment the unit or the source-run program states; this script only finds the interpreter.
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+
+# A release builds this environment on the Host and a source run builds it beside the checkout,
+# so the service starts without resolving anything. The fallback is for a bare checkout only.
+if [ -x "$REPO_ROOT/.venv/bin/python" ]; then
+  exec "$REPO_ROOT/.venv/bin/python" -m eidolon_vision.app "$@"
+fi
+
+exec "${EIDOLON_VISION_UV_BIN:-uv}" run --project "$REPO_ROOT" --locked python -m eidolon_vision.app "$@"

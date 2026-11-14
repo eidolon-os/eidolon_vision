@@ -2,8 +2,15 @@
 
 Called by the Host's own services, never by a device: Admin when the Owner
 enables recognition for a Person, Channel when a conversation asks who is in
-view. They present the Host service token; the device upload tokens that guard
-``/v1/burst`` and ``/v1/look`` do not open these routes.
+view. The device upload tokens that guard ``/v1/burst`` and ``/v1/look`` do not
+open these routes.
+
+Who may call follows from where the service listens. Bound to loopback with no
+token configured, the routes are open to the Host's own processes, like every
+other model service on a Host (recognition, speech, Laya): nothing is stored
+here to protect, since templates arrive with each request and Data, which keeps
+them, has its own token. With a token configured it is required. Bound anywhere
+else with no token, the routes answer 503 rather than serve the network.
 
 The image is decoded, used, and dropped when the request returns. Templates
 arrive with the request and are not kept. The audit row holds counts only.
@@ -34,6 +41,17 @@ from .config import Settings
 
 FEATURE_SCHEMA_VERSION = 1
 MAX_TEMPLATES = 200
+LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
+
+
+def face_routes_usable(settings: Settings, service: object | None) -> bool:
+    """Whether a face request can be answered: the model is loaded and callers are bounded.
+
+    Callers are bounded by a service token, or by the bind address when there is none.
+    """
+    return service is not None and (
+        bool(settings.service_token) or settings.host in LOOPBACK_HOSTS
+    )
 
 
 def register_face_routes(
@@ -42,10 +60,14 @@ def register_face_routes(
     service: tuple[FaceEncoder, FacePolicy] | None,
     audit: AuditSink | None,
 ) -> None:
+    usable = face_routes_usable(settings, service)
+
     def _authorize(authorization: str | None) -> None:
-        token = settings.service_token
-        if service is None or not token:
+        if not usable:
             raise HTTPException(status_code=503, detail="face identity is not configured")
+        token = settings.service_token
+        if not token:
+            return  # loopback only: the Host's own processes are the callers
         presented = (authorization or "").removeprefix("Bearer ")
         if not hmac.compare_digest(presented.encode(), token.encode()):
             raise HTTPException(status_code=401, detail="service token required")
@@ -71,6 +93,15 @@ def register_face_routes(
             ts_ms=time.time_ns() // 1_000_000,
         )
         await audit.record(ctx, "face_identity", egress=False, pixels_retained_ms=0, **fields)
+
+    @app.get("/v1/faces/readyz")
+    async def ready() -> dict:
+        # What a release waits for: 200 only once the pinned package is loaded
+        # and the routes would answer. Says nothing a caller needs a token for.
+        if not usable:
+            raise HTTPException(status_code=503, detail="face identity is not configured")
+        encoder, policy = service
+        return {"ready": True, "model_id": encoder.model_id, "policy_version": policy.version}
 
     @app.post("/v1/faces/embed")
     async def embed(

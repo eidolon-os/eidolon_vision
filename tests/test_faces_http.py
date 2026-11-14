@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from eidolon_vision.app.config import Settings
-from eidolon_vision.app.faces_http import register_face_routes
+from eidolon_vision.app.faces_http import face_routes_usable, register_face_routes
 from eidolon_vision.runtime.faces import EncodedFace, FacePolicy
 
 TOKEN = "host-service-token-for-tests"
@@ -165,14 +165,49 @@ def test_routes_need_the_service_token(served) -> None:
 def test_routes_are_unavailable_until_configured() -> None:
     for settings, service in (
         (Settings(service_token=TOKEN), None),
-        (Settings(service_token=""), (FakeEncoder(), POLICY)),
+        (Settings(service_token="", host="127.0.0.1"), None),
+        (Settings(service_token="", host="0.0.0.0"), (FakeEncoder(), POLICY)),
     ):
         app = FastAPI()
         register_face_routes(app, settings, service, None)
-        response = TestClient(app).post(
+        client = TestClient(app)
+        response = client.post(
             "/v1/faces/embed", files={"image": ("a.jpg", jpeg())}, data={"owner_id": "o"}, headers=AUTH
         )
         assert response.status_code == 503
+        assert client.get("/v1/faces/readyz").status_code == 503
+        assert face_routes_usable(settings, service) is False
+
+
+@pytest.mark.parametrize("host", ["127.0.0.1", "::1", "localhost"])
+def test_a_loopback_service_without_a_token_serves_the_host_itself(host) -> None:
+    settings = Settings(service_token="", host=host)
+    app = FastAPI()
+    register_face_routes(app, settings, (FakeEncoder(), POLICY), None)
+    client = TestClient(app)
+    for headers in ({}, AUTH):
+        response = client.post(
+            "/v1/faces/embed", files={"image": ("a.jpg", jpeg())}, data={"owner_id": "o"}, headers=headers
+        )
+        assert response.status_code == 200 and response.json()["accepted"] is True
+    assert face_routes_usable(settings, (FakeEncoder(), POLICY)) is True
+
+
+def test_a_token_is_still_required_off_loopback_and_on_it() -> None:
+    for host in ("0.0.0.0", "127.0.0.1"):
+        app = FastAPI()
+        register_face_routes(app, Settings(service_token=TOKEN, host=host), (FakeEncoder(), POLICY), None)
+        client = TestClient(app)
+        post = {"files": {"image": ("a.jpg", jpeg())}, "data": {"owner_id": "o"}}
+        assert client.post("/v1/faces/embed", **post).status_code == 401
+        assert client.post("/v1/faces/embed", headers=AUTH, **post).status_code == 200
+
+
+def test_readiness_names_the_loaded_package(served) -> None:
+    client, _, _ = served
+    response = client.get("/v1/faces/readyz")
+    assert response.status_code == 200
+    assert response.json() == {"ready": True, "model_id": "fake-face", "policy_version": "test-policy"}
 
 
 def test_oversized_and_undecodable_images_are_refused(served) -> None:

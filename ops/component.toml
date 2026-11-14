@@ -1,0 +1,55 @@
+# How eidolon_vision is operated, stated by the component that owns it.
+#
+# Like eidolon_models, this component is not on every Host: a Host runs it
+# where it declares local_face_identity, and one that does not installs nothing
+# from here, with no unit and no port reserved. The schema is eidolon_ops's
+# contracts/component-ops/v1.schema.json.
+
+schema_version = 1
+component_id = "eidolon_vision"
+contract_version = "1"
+
+[[units]]
+id = "eidolon-vision"
+kind = "service"
+exec = "scripts/eidolon-vision"
+user = "eidolon"
+serves = ["vision_api"]
+after = ["local-fs.target", "network.target"]
+# Comparing a camera still with the faces an Owner enrolled runs on this Host.
+# Without it the unit is not installed, Channel is given no Vision address and
+# does not offer vision.who, and Admin answers that recognition is unavailable.
+requires_capability = "local_face_identity"
+
+[ports.vision_api]
+default = 18085
+bind = "loopback"
+purpose = "face embedding and comparison for the Host's own services, HTTP at /v1/faces"
+
+# No [[inputs]]: the service takes no credential and no settings file. It is
+# loopback-only and stores nothing; the templates it compares arrive with each
+# request from Data, which is protected by its own token.
+
+[state]
+runtime = []
+
+# The audit log (/var/lib/eidolon/vision/audit.jsonl) is the only thing the
+# service writes: one line of counts per look. It is a record, not an
+# authority, so nothing is backed up; a factory reset removes it with the
+# Owner whose looks it lists.
+[reset]
+factory = ["/var/lib/eidolon/vision"]
+
+# Files the service opens by name in EIDOLON_VISION_FACE_IDENTITY_MODEL_DIR,
+# which its unit points at the Models artifact for this capability
+# (adapters/faces/opencv_zoo.py and app/bootstrap.py). Ops refuses a release
+# whose artifact does not carry them.
+[[consumes]]
+capability = "local_face_identity"
+component = "eidolon_models"
+files = [
+  "manifest.json",
+  "face-policy.json",
+  "face_detection_yunet_2023mar.onnx",
+  "face_recognition_sface_2021dec.onnx",
+]

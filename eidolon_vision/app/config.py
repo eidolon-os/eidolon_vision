@@ -51,10 +51,12 @@ class Settings(BaseSettings):
 
     # -- faces -------------------------------------------------------------
     # Comparing a still with enrolled templates (runtime/faces.py). Off until
-    # both are set: the model package directory owned by eidolon_models
-    # (face_recognition/sface_yunet_opencv_zoo/<revision>/) and the token the
-    # Host's own services present. Nothing is downloaded at runtime.
+    # the model package directory is set: the one owned by eidolon_models
+    # (face_recognition/sface_yunet_opencv_zoo/<revision>/), which a Host holds
+    # as a component artifact. Nothing is downloaded at runtime.
     face_identity_model_dir: str = ""
+    # Optional. Unset, the face routes serve loopback callers only and refuse
+    # when `host` is any other address; set, every caller must present it.
     service_token: str = ""  # injected at deploy, never committed
     face_max_image_bytes: int = 1536 * 1024
 

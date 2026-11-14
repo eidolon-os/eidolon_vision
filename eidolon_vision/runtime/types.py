@@ -21,7 +21,7 @@ PerceptorRole = str
 PERCEPTOR_ROLES: frozenset[str] = frozenset(
     {
         "presence",       # is a person there at all (boolean-ish, thresholdable)
-        "identity",       # is it the owner (device-only by policy; never host-side)
+        "identity",       # is it the owner, judged on the device (ESP-DL style)
         "face_metrics",   # bounded facial scalars (aspect ratios, head pose)
         "objects",        # coarse object classes with boxes
     }

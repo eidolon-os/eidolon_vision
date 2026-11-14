@@ -21,8 +21,9 @@ from ..adapters.codec import decode_jpeg
 from ..runtime import auth
 from ..runtime.graph import CapabilityUnavailable, EgressNotAuthorized, IntentUnsupported
 from ..runtime.types import RequestContext
-from .bootstrap import build_graph
+from .bootstrap import build_face_service, build_graph
 from .config import Settings, load_settings
+from .faces_http import register_face_routes
 
 
 def _now_ms() -> int:
@@ -39,6 +40,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or load_settings()
     app = FastAPI(title="eidolon_vision", version="0.2.0")
     graph = build_graph(settings, clock_ms=_now_ms)
+    faces = build_face_service(settings)
 
     def _context(grant: auth.UploadGrant, **kw) -> RequestContext:
         return RequestContext(owner_id=grant.owner_id, device_id=grant.device_id, **kw)
@@ -62,6 +64,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "triggers": graph.triggers(),
             "roles_bound": graph.bound_roles(),
             "interpreters": graph.interpreter_names(),
+            "face_identity": faces is not None and bool(settings.service_token),
         }
 
     @app.post("/v1/burst", status_code=202)
@@ -155,6 +158,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             return {"rows": []}
         lines = path.read_text(encoding="utf-8").splitlines()[-limit:]
         return {"rows": [json.loads(line) for line in lines if line.strip()]}
+
+    from ..adapters.sink.jsonl_audit import JsonlAuditSink
+
+    register_face_routes(app, settings, faces, JsonlAuditSink(settings.audit_log_path))
 
     @app.on_event("shutdown")
     async def _shutdown() -> None:

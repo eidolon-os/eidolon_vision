@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     enable_cloud_vlm: bool = False  # T3, egress; still needs per-request consent
     vlm_model: str = "gpt-4o-mini"
 
+    # -- faces -------------------------------------------------------------
+    # Comparing a still with enrolled templates (runtime/faces.py). Off until
+    # both are set: the model package directory owned by eidolon_models
+    # (face_recognition/sface_yunet_opencv_zoo/<revision>/) and the token the
+    # Host's own services present. Nothing is downloaded at runtime.
+    face_identity_model_dir: str = ""
+    service_token: str = ""  # injected at deploy, never committed
+    face_max_image_bytes: int = 1536 * 1024
+
     # -- assets & logs -----------------------------------------------------
     face_model_path: str = "models/face_landmarker.task"
     audit_log_path: str = "var/audit.jsonl"

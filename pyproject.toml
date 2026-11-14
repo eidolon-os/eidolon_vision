@@ -68,6 +68,7 @@ line-length = 100
 "scripts/*.py" = ["EXE001"]
 # Form()/File() in parameter defaults is FastAPI's documented idiom.
 "eidolon_vision/app/http.py" = ["B008"]
+"eidolon_vision/app/faces_http.py" = ["B008"]
 # Optional-adapter construction must degrade on *any* failure — a missing extra,
 # a missing model asset, or a runtime's own init error. Narrowing defeats that.
 "eidolon_vision/app/bootstrap.py" = ["BLE001"]

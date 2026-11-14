@@ -110,6 +110,29 @@ def build_interpreters(settings: Settings) -> list[Interpreter]:
     return chain
 
 
+def build_face_service(settings: Settings):
+    """Bind the face encoder and its policy, or None when faces are not configured.
+
+    Both come from one model package directory, so a policy can never be paired
+    with weights it was not measured on.
+    """
+    if not settings.face_identity_model_dir:
+        return None
+    from pathlib import Path
+
+    from ..adapters.faces.opencv_zoo import OpenCvZooFaceEncoder
+    from ..runtime.faces import load_policy
+
+    try:
+        encoder = OpenCvZooFaceEncoder(settings.face_identity_model_dir)
+        policy = load_policy(Path(settings.face_identity_model_dir) / "face-policy.json")
+    except Exception as exc:  # missing package, bad checksum, malformed policy
+        logger.warning("face identity unavailable: {}", exc)
+        return None
+    logger.info("face identity enabled: model={} policy={}", encoder.model_id, policy.version)
+    return encoder, policy
+
+
 def build_graph(settings: Settings, *, clock_ms) -> PerceptionGraph:
     registry = build_registry(settings.enabled_capabilities)
 

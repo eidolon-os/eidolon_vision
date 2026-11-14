@@ -35,6 +35,9 @@ _ALLOWED_FIELDS = frozenset(
         "observations",
         "facts",
         "facts_emitted",
+        # Face comparison: counts only. Never a name, a ref, a score or a vector.
+        "faces",
+        "templates",
     }
 )
 
